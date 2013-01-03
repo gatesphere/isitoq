@@ -17,10 +17,12 @@ nand <- push the value of nand on the stack
 
 
 operators:
-:  def fn
--> fn defn
+:somename . .. ... -> fn defn
 ?  test+push
 !  assert
+
+comments:
+// double slashes to end of line
 
 values:
 t - true
