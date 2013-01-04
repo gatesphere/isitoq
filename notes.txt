@@ -1,25 +1,25 @@
 // some fn defn's
-:nand .. -> ?f|f            // the universal
-:id .    -> ?. ?.          // alias for dup
-:not .   -> id nand ? t |       // not from nand and id
-:and ..  -> nand not ? t |
-:or ..   ->  id nand swap id nand nand ? t |
-:nor ..  -> or not ? t |
-:xor ..  -> or . .. nand and ? t |
-:xnor .. -> xor not ? t |
+:nor ..  -> ?f|f              // the (forgotten) universal
+:id .    -> ?. ?.            // alias for dup
+:not .   -> id nor ?t        // not from nor and id
+:and ..  -> ?t|t             // simple enough
+:nand .. -> and not ?t
+:or ..   -> nor not ?t
+:xor ..  -> or . .. nand and ?t
+:xnor .. -> xor not ?t
 
 t       //<- push a t
 f       //<- push an f
 nand    //<- push the value of nand on the stack
 ?t      //<- pop stack, if the pop of the stack is t, push t, else push f
-?f|f    //<- pop stack twice, test if both are f, if so, push t
+?f|t    //<- pop stack twice, test if both are f, if so, push t
 !t      //<- assert the top of the stack is true -- exit irrecoverably otherwise
 
 
 //operators:
 :somename ... -> fn defn
-?  //pop+test+push
-!  //assert
+//?  //pop+test+push
+//!  //assert
 
 //comments:
 // double slashes to end of line

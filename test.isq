@@ -1,0 +1,6 @@
+// isitoq test
+
+t f ?f|t // should push t to the stack (popping t and f in the process)
+t !t     // should pass (push t to the stack, assert t without pop)
+!t|t     // should still pass (assert t t without pop)
+!f       // should bail hard  (assert f when stack is [t t])

@@ -21,6 +21,12 @@ class IsitoqException(Exception):
   def __init__(self, msg):
     self.msg = msg
 
+class IsitoqFunction:
+  def __init__(self, name, argcount, body):
+    self.name = name
+    self.argcount = argcount
+    self.body = body
+
 def interpret_file(file):
   with open(file) as f:
     lines = f.readlines()
@@ -53,7 +59,7 @@ def is_fn_defn(line):
   if line.startswith(":"):
     line = line[1:]
     tokens = line.split()
-    return (len(tokens) > 4 and 
+    return (len(tokens) > 3 and 
             is_valid_name(tokens[0]) and 
             is_valid_argspec(tokens[1]) and
             tokens[2] == "->")
@@ -84,15 +90,17 @@ def is_cmd(line):
   return True
 
 def interpret_fn_defn(fn):
-  global isitoq_debug
-  if isitoq_debug:
-    print "FN defn: %s" % fn.strip()
+  global isitoq_debug, isitoq_funtion_lookup_table
+  fn = fn[1:].split()
+  name, argcount, body = fn[0], len(fn[1]), fn[3:]
+  if isitoq_funtion_lookup_table.get(name, None): 
+    raise IsitoqException("Multiple definitions of -- %s -- make ISITOQ ANGRY" % name)
+  else:
+    isitoq_funtion_lookup_table[name] = IsitoqFunction(name, argcount, body)
   pass
   
 def interpret_cmd(cmd):
   global isitoq_debug
-  if isitoq_debug:
-    print "cmd line: %s" % cmd.strip()
   for word in cmd.partition("//")[0].split():
     try:
       interpret_word(word)
@@ -100,17 +108,32 @@ def interpret_cmd(cmd):
       raise
 
 def interpret_word(word):
-  global isitoq_calling_stack, isitoq_main_stack
+  global isitoq_calling_stack, isitoq_main_stack, isitoq_debug
+  current_stack = isitoq_calling_stack[-1]
+  if isitoq_debug:
+    print "STACK BEFORE WORD %s: %s" % (word, print_stack(current_stack))
   if is_value(word):
-    isitoq_calling_stack[-1].append(value(word))
+    current_stack.append(value(word))
   elif is_test(word):
-    pass # stub
+    test = map(value, list(word[1:].split("|")))
+    vals = []
+    for i in range(len(test)):
+      vals.append(current_stack.pop())
+    if test[:] == vals[:]:
+      current_stack.append(True)
+    else:
+      current_stack.append(False)
   elif is_assert(word):
-    pass # stub
+    atest = map(value, list(word[1:].split("|")))
+    vals = []
+    for i in range(len(atest)):
+      vals.append(current_stack[-i+1])
+    if atest[:] != vals[:]:
+      raise IsitoqException("YOUR ASSERTION -- %s -- FAILED, MORTAL." % word)
   elif is_fn_call(word):
     pass # stub
   else:
-    raise IsitoqException("Isitoq does not know of the word -- %s -- and is VERY ANGRY" % word)
+    raise IsitoqException("ISITOQ does not know of the word -- %s -- and is VERY ANGRY" % word)
 
 def is_value(val):
   return val == "t" or val == "f"
@@ -119,7 +142,13 @@ def value(val):
   return val == "t"
 
 def is_test(test):
-  return test.startswith("?")
+  if test.startswith("?"):
+    for x in test[1:].split("|"):
+      if not is_value(x): 
+        return False
+    return True
+  else:
+    return False
 
 def is_assert(a):
   return a.startswith("!")
@@ -144,6 +173,11 @@ def version():
   print "Jacob Peck (suspended-chord)"
   print "http://github.com/gatesphere/isitoq"
   
+def print_stack(stack):
+  # magic:
+  # "ft"[True] == "t", "ft"[False] == "f"
+  return "[%s]<==" % ", ".join(map(lambda x: "ft"[x], stack))
+
 if __name__ == "__main__":
   args = sys.argv[1:]
   try:
@@ -169,11 +203,17 @@ if __name__ == "__main__":
   try:
     interpret_file(filename)
   except IsitoqException as e:
-    print "Isitoq judges your program FLAWED: "
+    print "ISITOQ judges your program FLAWED for committing the following sin: "
     print e.msg
     if isitoq_debug:
-      print "main stack contents"
-      print isitoq_main_stack
+      print "  main stack contents"
+      print "  %s" % print_stack(isitoq_main_stack)
+      print "  function definitions"
+      print "  %s" % isitoq_funtion_lookup_table
+    else:
+      print "ISITOQ has no MERCY for fools who don't DEBUG."
     sys.exit()
-  
+  print "ISITOQ has contemplated your input, and determined the following:"
+  print print_stack(isitoq_main_stack)
+  print "BE HAPPY, MORTAL, THAT YOUR PROGRAM RAN WITHOUT FLAWS."
   sys.exit()
