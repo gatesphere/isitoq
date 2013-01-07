@@ -118,12 +118,18 @@ def interpret_word(word):
   if isitoq_debug:
     print "%sSTACK BEFORE WORD %s: %s" % ("  "*(len(isitoq_calling_stack)-1), 
                                           word, print_stack(current_stack))
+  ## push a value
   if is_value(word):
     current_stack.append(value(word))
+    
+  ## run a test
   elif is_test(word):
     test = map(value, list(word[1:].split("|")))
-    vals = current_stack[-len(test):]
-    vals.reverse()
+    try:
+      vals = current_stack[-len(test):]
+      vals.reverse()
+    except:
+      raise IsitoqException("ISITOQ can't make truth from nothing!")
     if test[:] == vals[:]:
       if in_fn_call:
         prev_stack.append(True)
@@ -134,12 +140,19 @@ def interpret_word(word):
         prev_stack.append(False)
       else:
         current_stack.append(False)
+  
+  ## run an assertion
   elif is_assert(word):
     atest = map(value, list(word[1:].split("|")))
-    vals = current_stack[-len(atest):]
-    vals.reverse()
+    try:
+      vals = current_stack[-len(atest):]
+      vals.reverse()
+    except:
+      raise IsitoqException("ISITOQ can't make truth from nothing!")
     if atest[:] != vals[:]:
       raise IsitoqException("YOUR ASSERTION -- %s -- FAILED, MORTAL." % word)
+  
+  ## call a fn
   elif is_fn_call(word):
     # grab fn defn
     fn = isitoq_funtion_lookup_table[word]
@@ -147,8 +160,11 @@ def interpret_word(word):
     newstack = []
     # pop args from original stack
     args = []
-    for i in range(fn.argcount):
-      args.append(current_stack.pop())
+    try:
+      for i in range(fn.argcount):
+        args.append(current_stack.pop())
+    except:
+      raise IsitoqException("ISITOQ can't make truth from nothing!")
     # push onto new stack in proper order
     for arg in reversed(args):
       newstack.append(arg)
@@ -161,12 +177,16 @@ def interpret_word(word):
       interpret_word(w)
     # delete stack
     isitoq_calling_stack.pop()
+  
+  ## bindings while in functions
   elif in_fn_call and is_binding(word):
     arg = len(word)
     if arg > len(bindings):
       raise IsitoqException("ISITOQ cannot decipher the word -- %s -- and is NOT TO BE TRIFLED WITH, MORTAL" % word)
     else:
       current_stack.append(bindings[arg - 1])
+  
+  ## not a valid word
   else:
     raise IsitoqException("ISITOQ does not know of the word -- %s -- and is VERY ANGRY" % word)
 

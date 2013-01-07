@@ -1,0 +1,4 @@
+// this will FAIL
+:blah .... -> t t f ?t // this function takes 4 args
+
+t f blah // call it when there's only 2 on the stack.
