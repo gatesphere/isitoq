@@ -17,3 +17,5 @@ nor !f
 id nor !t
 not !f
 t nand !t
+f !f|t
+?t|f !f|f|t
