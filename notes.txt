@@ -1,6 +1,6 @@
 // some fn defn's
 :nor ..  -> ?f|f              // the (forgotten) universal
-:id .    -> ?. ?.            // alias for dup
+:id .    -> ?t ?t            // alias for dup
 :not .   -> id nor ?t        // not from nor and id
 :and ..  -> ?t|t             // simple enough
 :nand .. -> and not ?t
@@ -11,14 +11,14 @@
 t       //<- push a t
 f       //<- push an f
 nand    //<- push the value of nand on the stack
-?t      //<- pop stack, if the pop of the stack is t, push t, else push f
-?f|t    //<- pop stack twice, test if both are f, if so, push t
+?t      //<- if the peek of the stack is t, push t, else push f
+?f|t    //<- test if peek and peek[-1] both are f, if so, push t
 !t      //<- assert the top of the stack is true -- exit irrecoverably otherwise
 
 
 //operators:
 :somename ... -> fn defn
-//?  //pop+test+push
+//?  //test+push
 //!  //assert
 
 //comments:

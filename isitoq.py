@@ -13,6 +13,7 @@ isitoq_debug = False
 
 
 isitoq_main_stack = [];
+isitoq_bindings = [];
 isitoq_calling_stack = [isitoq_main_stack];
 
 ######################
@@ -108,30 +109,64 @@ def interpret_cmd(cmd):
       raise
 
 def interpret_word(word):
-  global isitoq_calling_stack, isitoq_main_stack, isitoq_debug
+  global isitoq_calling_stack, isitoq_main_stack, isitoq_debug, isitoq_bindings
   current_stack = isitoq_calling_stack[-1]
+  in_fn_call = len(isitoq_calling_stack) > 1
+  if in_fn_call:
+    prev_stack = isitoq_calling_stack[-2]
+    bindings = isitoq_bindings[-1]
   if isitoq_debug:
-    print "STACK BEFORE WORD %s: %s" % (word, print_stack(current_stack))
+    print "%sSTACK BEFORE WORD %s: %s" % ("  "*(len(isitoq_calling_stack)-1), 
+                                          word, print_stack(current_stack))
   if is_value(word):
     current_stack.append(value(word))
   elif is_test(word):
     test = map(value, list(word[1:].split("|")))
-    vals = []
-    for i in range(len(test)):
-      vals.append(current_stack.pop())
+    vals = current_stack[-len(test):]
+    vals.reverse()
     if test[:] == vals[:]:
-      current_stack.append(True)
+      if in_fn_call:
+        prev_stack.append(True)
+      else:
+        current_stack.append(True)
     else:
-      current_stack.append(False)
+      if in_fn_call:
+        prev_stack.append(False)
+      else:
+        current_stack.append(False)
   elif is_assert(word):
     atest = map(value, list(word[1:].split("|")))
-    vals = []
-    for i in range(len(atest)):
-      vals.append(current_stack[-i+1])
+    vals = current_stack[-len(atest):]
+    vals.reverse()
     if atest[:] != vals[:]:
       raise IsitoqException("YOUR ASSERTION -- %s -- FAILED, MORTAL." % word)
   elif is_fn_call(word):
-    pass # stub
+    # grab fn defn
+    fn = isitoq_funtion_lookup_table[word]
+    # create new stack
+    newstack = []
+    # pop args from original stack
+    args = []
+    for i in range(fn.argcount):
+      args.append(current_stack.pop())
+    # push onto new stack in proper order
+    for arg in reversed(args):
+      newstack.append(arg)
+    # create bindings
+    isitoq_bindings.append(args)
+    # add new stack to the calling stack
+    isitoq_calling_stack.append(newstack)
+    # interpret words
+    for w in fn.body:
+      interpret_word(w)
+    # delete stack
+    isitoq_calling_stack.pop()
+  elif in_fn_call and is_binding(word):
+    arg = len(word)
+    if arg > len(bindings):
+      raise IsitoqException("ISITOQ cannot decipher the word -- %s -- and is NOT TO BE TRIFLED WITH, MORTAL" % word)
+    else:
+      current_stack.append(bindings[arg - 1])
   else:
     raise IsitoqException("ISITOQ does not know of the word -- %s -- and is VERY ANGRY" % word)
 
@@ -156,6 +191,9 @@ def is_assert(a):
 def is_fn_call(fn):
   if isitoq_funtion_lookup_table.get(fn, None): return True
   else: return False
+  
+def is_binding(bind):
+  return is_valid_argspec(bind)
 
 ######################
 ## front end

@@ -1,6 +1,19 @@
 // isitoq test
 
-t f ?f|t // should push t to the stack (popping t and f in the process)
-t !t     // should pass (push t to the stack, assert t without pop)
-!t|t     // should still pass (assert t t without pop)
-!f       // should bail hard  (assert f when stack is [t t])
+// fn defn's
+:id . -> ?t ?t
+:nor .. -> ?f|f
+:not .   -> id nor ?t
+:and ..  -> ?t|t
+:nand .. -> and not ?t
+:or ..   -> nor not ?t
+:xor ..  -> or . .. nand and ?t
+:xnor .. -> xor not ?t
+
+t id !t|t
+id !t|t|t
+nor !f
+nor !f
+id nor !t
+not !f
+t nand !t
