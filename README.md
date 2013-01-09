@@ -15,7 +15,7 @@ From [Wikipedia](http://en.wikipedia.org/wiki/Issitoq):
 Isitoq is a programming language centered around the idea of testing.  
 It is extremely minimal, consisting of a single datatype (boolean values),
 and a few operations which revolve around comparing values.  It has a 
-single universal operation, `?` (the test operation) which is universal 
+single vital operation, `?` (the test operation) which is universal 
 and functionally complete, as it can implement a simple NOR gate.
 
 Isitoq will berate users for breaking programs, or for writing assertions
